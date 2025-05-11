@@ -38,13 +38,16 @@ use serde_json::json;
 pub async fn gen_card(text: &str) -> Result<CardFields> {
     #[cfg(feature = "full")]
     {
-        // Build request body based on OpenAI Responses API.
-        let instructions = "You are an expert pedagogue. For the given INPUT_TEXT produce concise flashcard JSON with keys front, back, tags (array of strings). Only output strict JSON.";
-
+        // Include the word "json" in the input text to satisfy API requirements
+        let enhanced_text = format!("Create JSON flashcard from this text: {}", text);
+        let instructions = "You are an expert pedagogue. For the given text create a concise flashcard JSON with keys front, back, tags (array of strings). Only output valid, structured JSON without any additional text.";
+        
+        info!("Enhanced input with JSON request: '{}'", enhanced_text);
+        
         let body = json!({
             "model": "gpt-4o-mini", // cheaper default; change as desired
             "instructions": instructions,
-            "input": text,
+            "input": enhanced_text,
             "temperature": 0.4,
             "max_output_tokens": 256,
             "text": { "format": { "type": "json_object" } }
