@@ -49,19 +49,35 @@ pub async fn gen_card(text: &str) -> Result<CardFields> {
             "text": { "format": { "type": "json_object" } }
         });
 
-        let api_key = std::env::var("OPENAI_API_KEY")
-            .map_err(|_| anyhow::anyhow!("Environment variable OPENAI_API_KEY not set"))?;
-
+        // Get API key
+        let api_key = match std::env::var("OPENAI_API_KEY") {
+            Ok(key) => {
+                tracing::info!("Found OpenAI API key (length: {})", key.len());
+                key
+            }
+            Err(_) => {
+                return Err(anyhow::anyhow!("Environment variable OPENAI_API_KEY not set"));
+            }
+        };
+        
+        tracing::info!("Making OpenAI API request with model: {}", body["model"]);
         let client = Client::new();
-        let resp: serde_json::Value = client
+        let response = client
             .post("https://api.openai.com/v1/responses")
             .bearer_auth(api_key)
             .json(&body)
             .send()
-            .await?
-            .error_for_status()?
-            .json()
             .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_body = response.text().await?;
+            tracing::error!("OpenAI API error: Status={}, Body={}", status, error_body);
+            return Err(anyhow::anyhow!("OpenAI API error: Status={}, Body={}", status, error_body));
+        }
+
+        tracing::info!("OpenAI API request successful");
+        let resp: serde_json::Value = response.json().await?;
 
         // Extract the assistant text content.
         let content = resp

@@ -28,9 +28,19 @@ async fn main() -> Result<()> {
     loop {
         select! {
             Some(evt) = cap_rx.recv() => {
-                info!("got capture event (stub)");
+                info!("📸 Capture event received: region={:?}", evt.region);
                 let txt = extract_text(&evt.image)?;
+                info!("🔍 OCR text extracted: '{}' ({} chars)", 
+                      txt.chars().take(50).collect::<String>() + 
+                      if txt.len() > 50 { "..." } else { "" }, 
+                      txt.len());
                 let card = gen_card(&txt).await?;
+                info!("🧠 Generated card: front='{}', back='{}', tags={:?}", 
+                      card.front.chars().take(30).collect::<String>() + 
+                      if card.front.len() > 30 { "..." } else { "" },
+                      card.back.chars().take(30).collect::<String>() + 
+                      if card.back.len() > 30 { "..." } else { "" },
+                      card.tags);
                 let card_json = data::CardJson { id: 0, front: card.front, back: card.back, tags: card.tags };
                 let new_id = data::insert_card(&db, &card_json, evt.path.as_deref())?;
                 info!("inserted card id={new_id}");

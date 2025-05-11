@@ -46,7 +46,8 @@ mod imp {
                         Key::ShiftLeft | Key::ShiftRight => st.shift = true,
                         Key::Comma | Key::Dot => {
                             if st.meta && st.shift {
-                                // Hotkey detected
+                                // Hotkey detected (Command+Shift+, or Command+Shift+.)
+                                info!("🔑 Hotkey detected: Command+Shift+{}", if k == Key::Comma { "," } else { "." });
                                 let _ = evt_tx.blocking_send(());
                             }
                         }
@@ -83,18 +84,24 @@ mod imp {
     }
 
     fn capture_screen() -> Result<CaptureEvent> {
+        info!("Attempting to capture screen");
         // Capture the screen where cursor is, else first screen.
         let screen = Screen::all()
             .map_err(|e| anyhow!("screenshot list failed: {e}"))?
             .into_iter()
             .next()
             .ok_or_else(|| anyhow!("empty screen list"))?;
+        info!("Detected screen: {}x{} at ({},{})", 
+              screen.display_info.width, screen.display_info.height,
+              screen.display_info.x, screen.display_info.y);
         let img = screen
             .capture()
             .map_err(|e| anyhow!("capture failed: {e}"))?;
         let (w, h) = (img.width(), img.height());
+        info!("Captured image: {}x{}", w, h);
         let rgba = image::RgbaImage::from_raw(w, h, img.rgba().clone())
             .ok_or_else(|| anyhow!("buffer size mismatch"))?;
+        info!("Converted to RGBA successfully");
 
         Ok(CaptureEvent {
             image: rgba,
