@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use serde::Deserialize;
+use tracing::{info, error};
 
 /// Result fields coming back from the LLM
 #[derive(Debug, Deserialize)]
@@ -52,7 +53,7 @@ pub async fn gen_card(text: &str) -> Result<CardFields> {
         // Get API key
         let api_key = match std::env::var("OPENAI_API_KEY") {
             Ok(key) => {
-                tracing::info!("Found OpenAI API key (length: {})", key.len());
+                info!("Found OpenAI API key (length: {})", key.len());
                 key
             }
             Err(_) => {
@@ -60,7 +61,7 @@ pub async fn gen_card(text: &str) -> Result<CardFields> {
             }
         };
         
-        tracing::info!("Making OpenAI API request with model: {}", body["model"]);
+        info!("Making OpenAI API request with model: {}", body["model"]);
         let client = Client::new();
         let response = client
             .post("https://api.openai.com/v1/responses")
@@ -72,11 +73,11 @@ pub async fn gen_card(text: &str) -> Result<CardFields> {
         if !response.status().is_success() {
             let status = response.status();
             let error_body = response.text().await?;
-            tracing::error!("OpenAI API error: Status={}, Body={}", status, error_body);
+            error!("OpenAI API error: Status={}, Body={}", status, error_body);
             return Err(anyhow::anyhow!("OpenAI API error: Status={}, Body={}", status, error_body));
         }
 
-        tracing::info!("OpenAI API request successful");
+        info!("OpenAI API request successful");
         let resp: serde_json::Value = response.json().await?;
 
         // Extract the assistant text content.

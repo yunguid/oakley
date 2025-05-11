@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
+tracing = { workspace = true }
 image = { version = "0.24", default-features = false, features = ["png"] }
 
 # Disable real leptess for now
