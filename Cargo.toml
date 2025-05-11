@@ -1,0 +1,45 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/oakley-cli",
+    "crates/scheduler",
+    "crates/data",
+    "crates/capture",
+    "crates/ocr",
+    "crates/llm",
+    "crates/utils"
+]
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+description = "Oakley SRS – offline, AI-powered spaced-repetition system"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+anyhow = "1"
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+tracing = "0.1"
+
+# Database support
+r2d2 = "0.8"
+rusqlite = { version = "0.29", features = ["bundled", "chrono", "serde_json"] }
+r2d2_sqlite = "0.22"
+
+# Input / capture
+rdev = "0.5"
+screenshots = "0.7"
+
+# ML bindings – stubs for now
+llama_cpp = "0.1"
+
+# OCR
+leptess = "0.6"
+
+[workspace.features]
+default = []
+full = [] 

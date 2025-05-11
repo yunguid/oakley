@@ -1,0 +1,26 @@
+[package]
+name = "oakley-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+
+# local
+utils = { path = "../utils" }
+capture = { path = "../capture" }
+ocr = { path = "../ocr" }
+llm = { path = "../llm" }
+data = { path = "../data" }
+scheduler = { path = "../scheduler" }
+
+[features]
+default = []
+full = [
+    "capture/full", 
+    "ocr/full", 
+    "llm/full"
+] 

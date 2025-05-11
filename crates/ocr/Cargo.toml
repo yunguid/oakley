@@ -1,0 +1,15 @@
+[package]
+name = "ocr"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+image = { version = "0.24", default-features = false, features = ["png"] }
+
+# Disable real leptess for now
+# leptess = { workspace = true, optional = true }
+
+[features]
+# We'll re-enable full feature once we can build with real leptess
+full = [] 
