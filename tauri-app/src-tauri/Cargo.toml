@@ -12,10 +12,11 @@ tokio = { workspace = true }
 # Oakley internal crates
 capture = { path = "../../crates/capture" }
 ocr = { path = "../../crates/ocr" }
-llm = { path = "../../crates/llm" }
+llm = { path = "../../crates/llm", features = ["full"] }
 data = { path = "../../crates/data" }
 scheduler = { path = "../../crates/scheduler" }
 utils = { path = "../../crates/utils" }
+tracing-subscriber = { workspace = true }
 
 [lib]
 crate-type = ["cdylib", "rlib"]

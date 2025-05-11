@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/tauri';
 import CardPreview from './components/CardPreview';
 
 interface CardJson {
@@ -15,27 +16,34 @@ export default function App() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const unlistenAll: Array<() => void> = [];
+    // Skip when running in a regular browser (Tauri APIs unavailable)
+    if (!(window as any).__TAURI_IPC__) return;
+
+    const unlisten: Array<() => void> = [];
 
     const setup = async () => {
-      unlistenAll.push(
-        await listen('card_generating', () => {
-          setLoading(true);
-          setVisible(true);
-        })
-      );
-      unlistenAll.push(
-        await listen<CardJson>('card_created', (event) => {
-          setCard(event.payload);
-          setLoading(false);
-          setVisible(true);
+      unlisten.push(
+        await listen('hotkey', async () => {
+          try {
+            setLoading(true);
+            setVisible(true);
+
+            const text = await navigator.clipboard.readText();
+            const newCard = await invoke<CardJson>('generate_card', { text });
+            setCard(newCard as CardJson);
+          } catch (err) {
+            console.error(err);
+          } finally {
+            setLoading(false);
+          }
         })
       );
     };
+
     setup();
 
     return () => {
-      unlistenAll.forEach((un) => un());
+      unlisten.forEach((u) => u());
     };
   }, []);
 
