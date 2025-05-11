@@ -24,3 +24,21 @@ Cargo.lock
 
 # Local development
 .env
+
+# Node / Tauri toolchain
+/tauri-app/node_modules/
+/tauri-app/tmp/
+/tauri-app/dist/
+/tauri-app/.vite/
+/tauri-app/.next/
+
+# Tauri build artifacts
+/tauri-app/src-tauri/target/
+
+# Local database & logs
+oakley.db
+*.log
+
+# Other
+/.cargo/
+.env.local

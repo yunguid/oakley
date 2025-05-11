@@ -4,10 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tauri = { version = "1.5", features = ["api-all"] }
+tauri = { version = "1.5" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
+tokio = { workspace = true }
+# Oakley internal crates
+capture = { path = "../../crates/capture", features = ["full"] }
+ocr = { path = "../../crates/ocr" }
+llm = { path = "../../crates/llm" }
+data = { path = "../../crates/data" }
+scheduler = { path = "../../crates/scheduler" }
+utils = { path = "../../crates/utils" }
 
 [lib]
-crate-type = ["cdylib", "rlib"] 
+crate-type = ["cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = "1.5" 

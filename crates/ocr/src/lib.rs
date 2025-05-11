@@ -42,6 +42,7 @@ mod imp {
 #[cfg(not(feature = "full"))]
 mod imp {
     use anyhow::Result;
+    use tracing::info;
 
     pub fn extract_text(_img: &image::RgbaImage) -> Result<String> {
         // In stub mode, we can add some debug data about the image
