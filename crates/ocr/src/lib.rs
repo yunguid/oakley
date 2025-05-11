@@ -8,15 +8,15 @@ mod leptess {
     pub struct LepTess;
     
     impl LepTess {
-        pub fn new(_datapath: Option<&str>, _lang: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        pub fn new(_datapath: Option<&str>, _lang: &str) -> anyhow::Result<Self> {
             Ok(Self {})
         }
         
-        pub fn set_image_from_mem(&mut self, _img_data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
+        pub fn set_image_from_mem(&mut self, _img_data: &[u8]) -> anyhow::Result<()> {
             Ok(())
         }
         
-        pub fn get_utf8_text(&self) -> Result<String, Box<dyn std::error::Error>> {
+        pub fn get_utf8_text(&self) -> anyhow::Result<String> {
             Ok("Mock OCR text from Tesseract".to_string())
         }
     }
