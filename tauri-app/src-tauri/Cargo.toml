@@ -4,13 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tauri = { version = "1.5" }
+tauri = { version = "1.5", features = [ "api-all", "macos-private-api"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 tokio = { workspace = true }
 # Oakley internal crates
-capture = { path = "../../crates/capture", features = ["full"] }
+capture = { path = "../../crates/capture" }
 ocr = { path = "../../crates/ocr" }
 llm = { path = "../../crates/llm" }
 data = { path = "../../crates/data" }
@@ -21,4 +21,4 @@ utils = { path = "../../crates/utils" }
 crate-type = ["cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = "1.5" 
+tauri-build = { version = "1.5", features = [] }
