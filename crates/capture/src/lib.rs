@@ -89,7 +89,9 @@ mod imp {
             .into_iter()
             .next()
             .ok_or_else(|| anyhow!("empty screen list"))?;
-        let img = screen.capture().ok_or_else(|| anyhow!("capture failed"))?;
+        let img = screen
+            .capture()
+            .map_err(|e| anyhow!("capture failed: {e}"))?;
         let (w, h) = (img.width(), img.height());
         let mut buf = img.buffer(); // BGRA
         // Convert BGRA -> RGBA in place
