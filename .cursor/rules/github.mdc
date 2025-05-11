@@ -1,5 +1,10 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
+After you modify code, always run git status to see what you've changed
+
+then add and commit files. never add files that are supposed tpo be in .gitignore. ask if you are unsure
+
+write commit messages that are short and sweet but carry meaning and clarity. add notes from our conversation that might help add important context. 
