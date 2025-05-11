@@ -7,7 +7,8 @@ members = [
     "crates/capture",
     "crates/ocr",
     "crates/llm",
-    "crates/utils"
+    "crates/utils",
+    "tauri-app/src-tauri"
 ]
 
 [workspace.package]
