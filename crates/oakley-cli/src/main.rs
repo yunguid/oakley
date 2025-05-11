@@ -7,6 +7,7 @@ use llm::gen_card;
 use scheduler::{Scheduler, ReviewOutcome};
 use tokio::{select, sync::mpsc};
 use tracing::{info, warn};
+use notify_rust::Notification;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -44,7 +45,13 @@ async fn main() -> Result<()> {
                 let card_json = data::CardJson { id: 0, front: card.front, back: card.back, tags: card.tags };
                 let new_id = data::insert_card(&db, &card_json, evt.path.as_deref())?;
                 info!("inserted card id={new_id}");
-                // TODO: IPC → UI popup here
+
+                // Fire a system notification so the user knows card was created
+                let _ = Notification::new()
+                    .summary("Oakley – Card Saved")
+                    .body(&format!("Card #{new_id} created from screenshot."))
+                    .icon("dialog-information")
+                    .show();
             }
             Some(outcome) = rev_rx.recv() => {
                 // TODO: persist outcome
