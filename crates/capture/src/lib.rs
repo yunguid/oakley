@@ -84,7 +84,11 @@ mod imp {
 
     fn capture_screen() -> Result<CaptureEvent> {
         // Capture the screen where cursor is, else first screen.
-        let screen = Screen::all().ok_or_else(|| anyhow!("no screens"))?.into_iter().next().ok_or_else(|| anyhow!("empty screen list"))?;
+        let screen = Screen::all()
+            .map_err(|e| anyhow!("screenshot list failed: {e}"))?
+            .into_iter()
+            .next()
+            .ok_or_else(|| anyhow!("empty screen list"))?;
         let img = screen.capture().ok_or_else(|| anyhow!("capture failed"))?;
         let (w, h) = (img.width(), img.height());
         let mut buf = img.buffer(); // BGRA
