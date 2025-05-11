@@ -1,0 +1,13 @@
+[package]
+name = "oakley-tauri"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tauri = { version = "1.5", features = ["api-all"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "rlib"] 
