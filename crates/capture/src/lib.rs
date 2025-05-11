@@ -93,12 +93,7 @@ mod imp {
             .capture()
             .map_err(|e| anyhow!("capture failed: {e}"))?;
         let (w, h) = (img.width(), img.height());
-        let mut buf = img.buffer(); // BGRA
-        // Convert BGRA -> RGBA in place
-        for chunk in buf.chunks_mut(4) {
-            chunk.swap(0, 2); // swap B and R
-        }
-        let rgba = image::RgbaImage::from_raw(w, h, buf)
+        let rgba = image::RgbaImage::from_raw(w, h, img.rgba().clone())
             .ok_or_else(|| anyhow!("buffer size mismatch"))?;
 
         Ok(CaptureEvent {
