@@ -28,19 +28,52 @@ mod llama_cpp {
     }
 }
 
+#[cfg(feature = "full")]
+use reqwest::Client;
+#[cfg(feature = "full")]
+use serde_json::json;
+
 /// Generate card JSON from plain text.
 pub async fn gen_card(text: &str) -> Result<CardFields> {
     #[cfg(feature = "full")]
     {
-        let prompt = format!(
-            "You are a pedagogue. Given INPUT_TEXT, output JSON with fields {{front, back, tags}}.\nINPUT_TEXT:\n{text}"
-        );
-        let raw = tokio::task::spawn_blocking(move || {
-            llama_cpp::generate(&prompt, llama_cpp::Params::default())
-        })
-        .await??;
-        
-        Ok(serde_json::from_str(&raw)?)
+        // Build request body based on OpenAI Responses API.
+        let instructions = "You are an expert pedagogue. For the given INPUT_TEXT produce concise flashcard JSON with keys front, back, tags (array of strings). Only output strict JSON.";
+
+        let body = json!({
+            "model": "gpt-4o-mini", // cheaper default; change as desired
+            "instructions": instructions,
+            "input": text,
+            "temperature": 0.4,
+            "max_output_tokens": 256,
+            "text": { "format": { "type": "json_object" } }
+        });
+
+        let api_key = std::env::var("OPENAI_API_KEY")
+            .map_err(|_| anyhow::anyhow!("Environment variable OPENAI_API_KEY not set"))?;
+
+        let client = Client::new();
+        let resp: serde_json::Value = client
+            .post("https://api.openai.com/v1/responses")
+            .bearer_auth(api_key)
+            .json(&body)
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+
+        // Extract the assistant text content.
+        let content = resp
+            .get("output")
+            .and_then(|o| o.get(0))
+            .and_then(|m| m.get("content"))
+            .and_then(|c| c.get(0))
+            .and_then(|p| p.get("text"))
+            .and_then(|t| t.as_str())
+            .ok_or_else(|| anyhow::anyhow!("Unexpected response structure from OpenAI"))?;
+
+        Ok(serde_json::from_str(content)?)
     }
 
     #[cfg(not(feature = "full"))]
