@@ -91,8 +91,11 @@ mod imp {
         #[cfg(target_os = "macos")]
         {
             info!("Launching interactive screencapture utility (-i)");
-            // Create a temporary PNG file
-            let tmp = NamedTempFile::new()?;
+            // Create a temporary PNG file with proper .png suffix – screencapture requires an extension
+            let tmp = tempfile::Builder::new()
+                .prefix("oakley_capture_")
+                .suffix(".png")
+                .tempfile()?;
             let path: PathBuf = tmp.path().into();
 
             // Run macOS screencapture with interactive selection (-i) and no sounds (-x)
