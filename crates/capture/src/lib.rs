@@ -19,6 +19,10 @@ mod imp {
     use screenshots::Screen;
     use std::sync::{Arc, Mutex};
     use anyhow::{Result, anyhow};
+    use std::process::Command;
+    use tempfile::NamedTempFile;
+    use std::path::PathBuf;
+    use std::fs;
 
     /// Simple modifier state tracker
     #[derive(Default)]
@@ -84,30 +88,70 @@ mod imp {
     }
 
     fn capture_screen() -> Result<CaptureEvent> {
-        info!("Attempting to capture screen");
-        // Capture the screen where cursor is, else first screen.
-        let screen = Screen::all()
-            .map_err(|e| anyhow!("screenshot list failed: {e}"))?
-            .into_iter()
-            .next()
-            .ok_or_else(|| anyhow!("empty screen list"))?;
-        info!("Detected screen: {}x{} at ({},{})", 
-              screen.display_info.width, screen.display_info.height,
-              screen.display_info.x, screen.display_info.y);
-        let img = screen
-            .capture()
-            .map_err(|e| anyhow!("capture failed: {e}"))?;
-        let (w, h) = (img.width(), img.height());
-        info!("Captured image: {}x{}", w, h);
-        let rgba = image::RgbaImage::from_raw(w, h, img.rgba().clone())
-            .ok_or_else(|| anyhow!("buffer size mismatch"))?;
-        info!("Converted to RGBA successfully");
+        #[cfg(target_os = "macos")]
+        {
+            info!("Launching interactive screencapture utility (-i)");
+            // Create a temporary PNG file
+            let tmp = NamedTempFile::new()?;
+            let path: PathBuf = tmp.path().into();
 
-        Ok(CaptureEvent {
-            image: rgba,
-            region: (0, 0, w as u32, h as u32),
-            path: None,
-        })
+            // Run macOS screencapture with interactive selection (-i) and no sounds (-x)
+            // -t png ensures PNG output
+            let status = Command::new("screencapture")
+                .args(["-x", "-i", "-t", "png", path.to_str().unwrap()])
+                .status()?;
+
+            if !status.success() {
+                return Err(anyhow!("screencapture exited with status {status}"));
+            }
+
+            // If user cancelled, the file might be zero bytes
+            let metadata = fs::metadata(&path)?;
+            if metadata.len() == 0 {
+                return Err(anyhow!("screenshot cancelled by user"));
+            }
+
+            let bytes = fs::read(&path)?;
+            let dyn_img = image::load_from_memory(&bytes)?;
+            let rgba = dyn_img.to_rgba8();
+            let (w, h) = rgba.dimensions();
+
+            info!("Interactive capture successful: {}x{}", w, h);
+
+            return Ok(CaptureEvent {
+                image: rgba,
+                region: (0, 0, w, h), // selection region relative not known – default to full img size
+                path: Some(path.to_string_lossy().to_string()),
+            });
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            info!("Attempting to capture full screen (non-macOS fallback)");
+            // Capture the screen where cursor is, else first screen.
+            let screen = Screen::all()
+                .map_err(|e| anyhow!("screenshot list failed: {e}"))?
+                .into_iter()
+                .next()
+                .ok_or_else(|| anyhow!("empty screen list"))?;
+            info!("Detected screen: {}x{} at ({},{})", 
+                  screen.display_info.width, screen.display_info.height,
+                  screen.display_info.x, screen.display_info.y);
+            let img = screen
+                .capture()
+                .map_err(|e| anyhow!("capture failed: {e}"))?;
+            let (w, h) = (img.width(), img.height());
+            info!("Captured image: {}x{}", w, h);
+            let rgba = image::RgbaImage::from_raw(w, h, img.rgba().clone())
+                .ok_or_else(|| anyhow!("buffer size mismatch"))?;
+            info!("Converted to RGBA successfully");
+
+            Ok(CaptureEvent {
+                image: rgba,
+                region: (0, 0, w as u32, h as u32),
+                path: None,
+            })
+        }
     }
 }
 
