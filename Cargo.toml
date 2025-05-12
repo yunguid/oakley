@@ -5,7 +5,6 @@ members = [
     "crates/scheduler",
     "crates/data",
     "crates/capture",
-    "crates/ocr",
     "crates/llm",
     "crates/utils",
     "tauri-app/src-tauri"
@@ -40,7 +39,7 @@ screenshots = "0.7"
 llama_cpp = "0.1"
 
 # OCR
-leptess = "0.6"
+# leptess = "0.6"
 
 [workspace.features]
 default = []
