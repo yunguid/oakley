@@ -19,7 +19,7 @@
       "targets": "all",
       "identifier": "com.oakley.dev",
       "icon": [
-        "icons/icon.png"
+        "icons/oakley.png"
       ]
     },
     "security": {
