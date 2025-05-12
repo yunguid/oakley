@@ -127,6 +127,7 @@ pub async fn gen_card_from_image(image_bytes: &[u8]) -> Result<CardFields> {
             "input": [{
                 "role": "user",
                 "content": [
+                    {"type": "input_text", "text": "Create JSON flashcard with keys front, back, tags from this image. Only output JSON."},
                     {"type": "input_image", "image_url": data_url}
                 ]
             }],
