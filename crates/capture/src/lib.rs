@@ -27,13 +27,13 @@ mod imp {
     /// Simple modifier state tracker
     #[derive(Default)]
     struct ModState {
-        meta: bool,   // Command / Meta
+        ctrl: bool,   // Control
         shift: bool,
     }
 
-    /// Listen for hot-key (Cmd+Shift+,) and push capture events.
+    /// Listen for hot-key (Ctrl+Shift+>) and push capture events.
     pub async fn listen_and_capture(tx: Sender<CaptureEvent>) -> Result<()> {
-        info!("capture listener enabled");
+        info!("🎯 Capture listener enabled, waiting for ⌃⇧>");
 
         // Channel to bridge between blocking hotkey thread and async world
         let (evt_tx, mut evt_rx) = tokio::sync::mpsc::channel::<()>(4);
@@ -45,22 +45,28 @@ mod imp {
             if let Err(e) = listen(move |event| {
                 let mut st = state_clone.lock().unwrap();
                 match event.event_type {
-                    EventType::KeyPress(k) => match k {
-                        Key::MetaLeft | Key::MetaRight => st.meta = true,
-                        Key::ShiftLeft | Key::ShiftRight => st.shift = true,
-                        Key::Comma | Key::Dot => {
-                            if st.meta && st.shift {
-                                // Hotkey detected (Command+Shift+, or Command+Shift+.)
-                                info!("🔑 Hotkey detected: Command+Shift+{}", if k == Key::Comma { "," } else { "." });
-                                let _ = evt_tx.blocking_send(());
+                    EventType::KeyPress(k) => {
+                        info!("👆 Key press: {:?}", k);
+                        match k {
+                            Key::ControlLeft | Key::ControlRight => st.ctrl = true,
+                            Key::ShiftLeft | Key::ShiftRight => st.shift = true,
+                            Key::Dot => {
+                                // '>' requires Shift modifier; '.' key is Dot
+                                if st.ctrl && st.shift {
+                                    info!("🔑 Hotkey detected: Control+Shift+>");
+                                    let _ = evt_tx.blocking_send(());
+                                }
                             }
+                            _ => {}
                         }
-                        _ => {}
                     },
-                    EventType::KeyRelease(k) => match k {
-                        Key::MetaLeft | Key::MetaRight => st.meta = false,
-                        Key::ShiftLeft | Key::ShiftRight => st.shift = false,
-                        _ => {}
+                    EventType::KeyRelease(k) => {
+                        info!("👇 Key release: {:?}", k);
+                        match k {
+                            Key::ControlLeft | Key::ControlRight => st.ctrl = false,
+                            Key::ShiftLeft | Key::ShiftRight => st.shift = false,
+                            _ => {}
+                        }
                     },
                     _ => {}
                 }
@@ -73,6 +79,7 @@ mod imp {
         while evt_rx.recv().await.is_some() {
             match capture_screen() {
                 Ok(capture_event) => {
+                    info!("📸 Captured screen region: {}x{}", capture_event.region.2, capture_event.region.3);
                     if tx.send(capture_event).await.is_err() {
                         error!("Main receiver dropped; stopping capture listener");
                         break;

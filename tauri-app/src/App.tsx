@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/tauri';
 import CardPreview from './components/CardPreview';
 
 interface CardJson {
@@ -22,20 +21,20 @@ export default function App() {
     const unlisten: Array<() => void> = [];
 
     const setup = async () => {
+      // Show spinner when hotkey fires (legacy path)
       unlisten.push(
-        await listen('hotkey', async () => {
-          try {
-            setLoading(true);
-            setVisible(true);
+        await listen('hotkey', () => {
+          setLoading(true);
+          setVisible(true);
+        })
+      );
 
-            const text = await navigator.clipboard.readText(); // assumes user copied text prior to Cmd+Shift+P
-            const newCard = await invoke<CardJson>('generate_card', { text });
-            setCard(newCard as CardJson);
-          } catch (err) {
-            console.error(err);
-          } finally {
-            setLoading(false);
-          }
+      // Primary path – backend emits card_created after OCR/LLM pipeline
+      unlisten.push(
+        await listen<CardJson>('card_created', (event) => {
+          setCard(event.payload as CardJson);
+          setLoading(false);
+          setVisible(true);
         })
       );
     };

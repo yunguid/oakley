@@ -10,7 +10,7 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 tokio = { workspace = true }
 # Oakley internal crates
-capture = { path = "../../crates/capture" }
+capture = { path = "../../crates/capture", features = ["full"] }
 ocr = { path = "../../crates/ocr" }
 llm = { path = "../../crates/llm", features = ["full"] }
 data = { path = "../../crates/data" }

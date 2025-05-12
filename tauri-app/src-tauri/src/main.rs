@@ -1,13 +1,17 @@
 //! Tauri desktop shell for Oakley SRS.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::{Manager, GlobalShortcutManager};
+use tauri::Manager;
 use anyhow::Result;
 
 // internal crates
 use llm::gen_card;
 use scheduler::{Scheduler, ReviewOutcome};
 use data::{DbPool, insert_card};
+use capture::CaptureEvent;
+use ocr::extract_text;
+use tokio::sync::mpsc;
+use tracing::{info, error};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
 pub struct CardJson {
@@ -75,18 +79,62 @@ fn main() {
             app.manage(db.clone());
 
             // Kick off scheduler loop
-            let (tx, _rx) = tokio::sync::mpsc::channel::<ReviewOutcome>(32);
-            tauri::async_runtime::spawn(Scheduler::new(db.clone(), tx).run());
+            let (rev_tx, _rev_rx) = tokio::sync::mpsc::channel::<ReviewOutcome>(32);
+            tauri::async_runtime::spawn(Scheduler::new(db.clone(), rev_tx.clone()).run());
 
-            // Register global shortcut Cmd+Shift+P (less likely to conflict)
-            let handle = app.handle();
-            app.global_shortcut_manager().register("Cmd+Shift+P", move || {
-                let _ = handle.emit_all("hotkey", ());
-            })?;
+            // ── background capture + pipeline ──
+            let (cap_tx, mut cap_rx) = mpsc::channel::<CaptureEvent>(16);
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = capture::listen_and_capture(cap_tx).await {
+                    error!(?e, "capture listener exited");
+                }
+            });
+
+            // Clone app handle for emitting events to UI
+            let app_handle = app.handle();
+
+            // Process capture events -> OCR -> LLM -> DB -> emit to UI
+            tauri::async_runtime::spawn(async move {
+                while let Some(evt) = cap_rx.recv().await {
+                    info!(?evt.region, "📸 Capture event received");
+                    match process_capture(evt, &db, &app_handle).await {
+                        Ok(_) => {}
+                        Err(e) => error!(?e, "failed to process capture")
+                    }
+                }
+            });
 
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![generate_card, accept_card, discard_card])
         .run(tauri::generate_context!())
         .expect("error while running Oakley");
+}
+
+async fn process_capture(evt: CaptureEvent, db: &DbPool, app_handle: &tauri::AppHandle) -> Result<()> {
+    let text = extract_text(&evt.image)?;
+    info!(len = text.len(), "🔍 OCR extracted");
+
+    let fields = gen_card(&text).await?;
+
+    let db_card = data::CardJson {
+        id: 0,
+        front: fields.front.clone(),
+        back: fields.back.clone(),
+        tags: fields.tags.clone(),
+    };
+
+    let id = insert_card(db, &db_card, evt.path.as_deref())?;
+    info!(id, "🧠 Card saved");
+
+    let card_json = CardJson {
+        id,
+        front: fields.front,
+        back: fields.back,
+        tags: fields.tags,
+    };
+
+    let _ = app_handle.emit_all("card_created", &card_json);
+
+    Ok(())
 } 
