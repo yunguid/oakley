@@ -49,11 +49,11 @@ export default function App() {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
-      <div className="pointer-events-auto bg-black/70 backdrop-blur rounded-lg shadow-lg p-6 w-[400px]">
+    <div className="fixed inset-0 flex items-center justify-center pointer-events-none bg-white/40 backdrop-blur-sm">
+      <div className="pointer-events-auto bg-white/90 border border-gray-200 rounded-xl shadow-2xl p-8 w-[420px]">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-40 text-white">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white" />
+          <div className="flex flex-col items-center justify-center h-40 text-gray-700">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
             <p className="mt-4">Generating card…</p>
           </div>
         ) : card ? (

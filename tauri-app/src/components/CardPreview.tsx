@@ -27,29 +27,39 @@ const CardPreview: React.FC<Props> = ({ card, onClose }) => {
   };
 
   return (
-    <div className="flex flex-col space-y-4">
-      <textarea
-        className="w-full h-24 bg-transparent border border-gray-500 rounded text-white font-mono p-2 resize-none"
-        value={front}
-        onChange={(e) => setFront(e.target.value)}
-      />
-      <textarea
-        className="w-full h-24 bg-transparent border border-gray-500 rounded text-white font-mono p-2 resize-none"
-        value={back}
-        onChange={(e) => setBack(e.target.value)}
-      />
-      <div className="flex gap-4 justify-end">
+    <div className="flex flex-col space-y-6 text-gray-800">
+      <div className="space-y-2">
+        <label className="text-sm font-semibold" htmlFor="front">Front</label>
+        <textarea
+          id="front"
+          className="w-full h-28 border border-gray-300 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-inner bg-white/80 backdrop-blur-sm"
+          value={front}
+          onChange={(e) => setFront(e.target.value)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-semibold" htmlFor="back">Back</label>
+        <textarea
+          id="back"
+          className="w-full h-28 border border-gray-300 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-inner bg-white/80 backdrop-blur-sm"
+          value={back}
+          onChange={(e) => setBack(e.target.value)}
+        />
+      </div>
+
+      <div className="flex gap-3 justify-end pt-2">
         <button
-          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
-          onClick={save}
-        >
-          Save
-        </button>
-        <button
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
+          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors"
           onClick={discard}
         >
           Discard
+        </button>
+        <button
+          className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-colors"
+          onClick={save}
+        >
+          Save
         </button>
       </div>
     </div>
