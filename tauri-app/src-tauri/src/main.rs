@@ -177,6 +177,29 @@ fn main() {
                 });
             })?;
 
+            // --- HTTP JSON endpoint for external browsers ---
+            let db_http = db.clone();
+            tauri::async_runtime::spawn(async move {
+                use warp::Filter;
+                let db_ref = db_http.clone();
+                let get_cards = warp::path("cards").and(warp::get()).and_then(move || {
+                    let db = db_ref.clone();
+                    async move {
+                        let reply = match fetch_all_cards(&db) {
+                            Ok(cards) => warp::reply::json(&cards),
+                            Err(e) => {
+                                error!(?e, "fetch_all_cards failed");
+                                warp::reply::json(&Vec::<data::CardJson>::new())
+                            }
+                        };
+                        Ok::<_, std::convert::Infallible>(reply)
+                    }
+                });
+                // CORS: allow any origin (dev)
+                let routes = get_cards.with(warp::cors().allow_any_origin());
+                warp::serve(routes).run(([127,0,0,1], 3030)).await;
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

@@ -18,24 +18,29 @@ export default function App() {
   const [cards, setCards] = useState<CardJson[]>([]);
 
   useEffect(() => {
-    // Skip when running in a regular browser (Tauri APIs unavailable)
-    if (!(window as any).__TAURI_IPC__) return;
+    const tauri = (window as any).__TAURI_IPC__;
+
+    const refresh = async () => {
+      try {
+        if (tauri) {
+          const res = (await invoke('list_cards')) as CardJson[];
+          setCards(res);
+        } else {
+          const res = await fetch('http://localhost:3030/cards').then(r => r.json());
+          setCards(res);
+        }
+      } catch (e) {
+        console.error('list_cards failed', e);
+      }
+    };
+
+    refresh();
+
+    if (!tauri) return; // no event listeners outside Tauri
 
     const unlisten: Array<() => void> = [];
 
     const setup = async () => {
-      const refresh = async () => {
-        try {
-          const res = (await invoke('list_cards')) as CardJson[];
-          setCards(res);
-        } catch (e) {
-          console.error('list_cards failed', e);
-        }
-      };
-
-      // initial load
-      refresh();
-
       // Show spinner when hotkey fires (legacy path)
       unlisten.push(
         await listen('hotkey', () => {
