@@ -49,12 +49,12 @@ export default function App() {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center pointer-events-none bg-white/40 backdrop-blur-sm">
-      <div className="pointer-events-auto bg-white/95 border border-neutral-200 rounded-2xl shadow-xl p-10 w-[460px]">
+    <div className="fixed inset-0 flex items-center justify-center">
+      <div className="w-[460px] p-10 bg-white/90 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/20 animate-fade-in">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-40 text-gray-700">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
-            <p className="mt-4">Generating card…</p>
+          <div className="flex flex-col items-center justify-center h-40 text-neutral-600">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-neutral-200 border-t-neutral-800" />
+            <p className="mt-4 text-sm tracking-wide">Generating card…</p>
           </div>
         ) : card ? (
           <CardPreview card={card} onClose={() => setVisible(false)} />
