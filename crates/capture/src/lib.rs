@@ -94,7 +94,10 @@ mod imp {
         Ok(())
     }
 
-    fn capture_screen() -> Result<CaptureEvent> {
+    /// Captures the screen (interactive region grab on macOS, full screen fallback elsewhere).
+    /// Exposed publicly so other binaries (e.g. Tauri) can reuse without going through
+    /// the hot-key listener.
+    pub fn capture_screen() -> Result<CaptureEvent> {
         #[cfg(target_os = "macos")]
         {
             info!("Launching interactive screencapture utility (-i)");
@@ -175,6 +178,12 @@ mod imp {
         // No-op in stub builds.
         Ok(())
     }
+
+    /// No-op capture, returns error when full feature is disabled.
+    pub fn capture_screen() -> Result<CaptureEvent> {
+        anyhow::bail!("capture feature not enabled");
+    }
 }
 
-pub use imp::listen_and_capture; 
+pub use imp::listen_and_capture;
+pub use imp::capture_screen; // re-export for external callers 

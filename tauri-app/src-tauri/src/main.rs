@@ -1,7 +1,7 @@
 //! Tauri desktop shell for Oakley SRS.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::Manager;
+use tauri::{Manager, GlobalShortcutManager};
 use anyhow::Result;
 
 // internal crates
@@ -10,7 +10,6 @@ use scheduler::{Scheduler, ReviewOutcome};
 use data::{DbPool, insert_card};
 use capture::CaptureEvent;
 use ocr::extract_text;
-use tokio::sync::mpsc;
 use tracing::{info, error};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
@@ -82,27 +81,25 @@ fn main() {
             let (rev_tx, _rev_rx) = tokio::sync::mpsc::channel::<ReviewOutcome>(32);
             tauri::async_runtime::spawn(Scheduler::new(db.clone(), rev_tx.clone()).run());
 
-            // ── background capture + pipeline ──
-            let (cap_tx, mut cap_rx) = mpsc::channel::<CaptureEvent>(16);
-            tauri::async_runtime::spawn(async move {
-                if let Err(e) = capture::listen_and_capture(cap_tx).await {
-                    error!(?e, "capture listener exited");
-                }
-            });
-
-            // Clone app handle for emitting events to UI
-            let app_handle = app.handle();
-
-            // Process capture events -> OCR -> LLM -> DB -> emit to UI
-            tauri::async_runtime::spawn(async move {
-                while let Some(evt) = cap_rx.recv().await {
-                    info!(?evt.region, "📸 Capture event received");
-                    match process_capture(evt, &db, &app_handle).await {
-                        Ok(_) => {}
-                        Err(e) => error!(?e, "failed to process capture")
+            // ── Global shortcut Cmd+Shift+<  ──
+            let shortcut_handle = app.handle();
+            let db_clone = db.clone();
+            app.global_shortcut_manager().register("Cmd+Shift+Comma", move || {
+                let app_handle = shortcut_handle.clone();
+                let db = db_clone.clone();
+                tauri::async_runtime::spawn(async move {
+                    match capture::capture_screen() {
+                        Ok(evt) => {
+                            if let Err(e) = process_capture(evt, &db, &app_handle).await {
+                                error!(?e, "failed to process capture");
+                            }
+                        }
+                        Err(e) => error!(?e, "capture error"),
                     }
-                }
-            });
+                });
+                // Notify UI to show spinner immediately
+                let _ = app_handle.emit_all("hotkey", ());
+            })?;
 
             Ok(())
         })
