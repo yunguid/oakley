@@ -84,21 +84,25 @@ fn main() {
             // ── Global shortcut Cmd+Shift+<  ──
             let shortcut_handle = app.handle();
             let db_clone = db.clone();
+
             app.global_shortcut_manager().register("Cmd+Shift+Comma", move || {
-                let app_handle = shortcut_handle.clone();
                 let db = db_clone.clone();
+
+                // Clone separately for the async task so we don't move the same handle twice.
+                let async_handle = shortcut_handle.clone();
                 tauri::async_runtime::spawn(async move {
                     match capture::capture_screen() {
                         Ok(evt) => {
-                            if let Err(e) = process_capture(evt, &db, &app_handle).await {
+                            if let Err(e) = process_capture(evt, &db, &async_handle).await {
                                 error!(?e, "failed to process capture");
                             }
                         }
                         Err(e) => error!(?e, "capture error"),
                     }
                 });
-                // Notify UI to show spinner immediately
-                let _ = app_handle.emit_all("hotkey", ());
+
+                // Notify UI to show spinner immediately using the original handle.
+                let _ = shortcut_handle.emit_all("hotkey", ());
             })?;
 
             Ok(())
