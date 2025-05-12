@@ -13,7 +13,6 @@ notify-rust = "4"
 # local
 utils = { path = "../utils" }
 capture = { path = "../capture" }
-ocr = { path = "../ocr" }
 llm = { path = "../llm" }
 data = { path = "../data" }
 scheduler = { path = "../scheduler" }
