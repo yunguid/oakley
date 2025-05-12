@@ -21,7 +21,6 @@ scheduler = { path = "../scheduler" }
 [features]
 default = []
 full = [
-    "capture/full", 
-    "ocr/full", 
+    "capture/full",
     "llm/full"
 ] 
