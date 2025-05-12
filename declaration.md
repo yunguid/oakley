@@ -6,7 +6,7 @@ _(version 0.1 • 10 May 2025)_
 
 ## 1 Executive summary
 
-Oakley SRS is an **offline, AI-powered spaced-repetition system** that captures knowledge snippets from any screen, turns them into flash-cards with a local LLM, and periodically quizzes the user by voice or text. Every stage—screenshot, OCR, card generation, review scheduling, and speech recognition—runs on-device, preserving privacy and working without an Internet connection.
+Oakley SRS is an AI-powered spaced-repetition system that captures text or screenshots from your screen, turns them into flash-cards using OpenAI, and periodically quizzes the user by voice or text. The system provides both a desktop app for card creation and a web interface for browsing and reviewing cards.
 
 ---
 
@@ -15,10 +15,10 @@ Oakley SRS is an **offline, AI-powered spaced-repetition system** that captures 
 |Objective|Measurable success|
 |---|---|
 |_Zero-friction capture_|Hot-key → card in ≤ 3 s 90 % of the time|
-|_Accurate card text_|≥ 98 % OCR accuracy on English text (Tesseract 5 baseline)|
+|_Accurate card generation_|≥ 95% user acceptance rate of generated cards|
 |_Reliable scheduling_|Scheduler error < 0.1 days across 10 000 simulated reviews (SM-2)|
 |_Delightful UX_|> 80 % thumbs-up in in-app feedback after one week of use|
-|_Full offline mode_|All core features work without network for 30 days|
+|_Seamless web access_|Cards accessible via browser with < 100ms latency|
 
 ---
 
@@ -28,8 +28,8 @@ Oakley SRS is an **offline, AI-powered spaced-repetition system** that captures 
 |---|---|
 |**Product owner**|Defines learning goals, monitors KPIs|
 |**Core engineer**|Rust/Tauri dev, pipeline & DB|
-|**ML engineer**|Prompt tuning, model quantisation|
-|**UX designer**|Popup & review surface|
+|**API engineer**|OpenAI integration, REST endpoints|
+|**UX designer**|Desktop & web UI|
 |**QA lead**|Test automation, regression suite|
 |**Dev-ops** (light)|Binary signing, auto-update feed|
 
@@ -39,25 +39,27 @@ Oakley SRS is an **offline, AI-powered spaced-repetition system** that captures 
 
 |Capability|MVP|v1|
 |---|---|---|
-|Screenshot capture|Hot-key region grab|Browser-extension capture|
-|OCR|English|+ multi-lang / math|
-|Card generator|Q-A prompt, basic tags|Concept-map, cloze transforms|
+|Text capture|Hot-key selection|Browser-extension capture|
+|Screenshot|Region selection|OCR integration (optional)|
+|Card generator|OpenAI Q-A prompt|Concept-map, cloze transforms|
 |Scheduler|SM-2|FSRS adaptive algo|
 |Review input|Text box|Whisper voice|
-|Sync|Local DB|Optional encrypted cloud sync|
+|Access|Local + Web|Optional encrypted cloud sync|
 |Platforms|macOS + Windows|+ Linux, iOS companion|
 
 ---
 
 ## 5 Primary user journeys
 
-1. **Capture** → Press ⇧⌘S. Transparent overlay appears, user drags rectangle, releases.
+1. **Text capture** → Press ⇧⌘>. Selected text is captured and sent to card generation.
     
-2. **Generation** → LLM returns _(Front, Back, Tags)_; modal shows result. User clicks ✔︎ or ✖︎ or edits, then saves.
+2. **Screenshot** → Press ⇧⌘<. Transparent overlay appears, user drags rectangle, releases.
     
-3. **Review** → At due time, native notif pops: “What is the Fourier transform pair of a Gaussian?” Click reveals answer, user grades Pass/Fail (or answers aloud).
+3. **Generation** → OpenAI returns _(Front, Back, Tags)_; modal shows result. User clicks ✔︎ or ✖︎ or edits, then saves.
     
-4. **Metrics** → Weekly dashboard shows retention curve and streak.
+4. **Review** → Cards available at localhost:5173 or through native app. User grades Pass/Fail.
+    
+5. **Metrics** → Weekly dashboard shows retention curve and streak.
     
 
 ---
@@ -65,38 +67,43 @@ Oakley SRS is an **offline, AI-powered spaced-repetition system** that captures 
 ## 6 System architecture
 
 ```
- ┌─────────┐  hot-key  ┌─────────────┐  pixels  ┌─────────┐  UTF-8  ┌────────┐   JSON   ┌────────┐
- │ OS hook │──────────▶│Screenshot   │──────────▶│   OCR   │────────▶│ LLM FC │────────▶│  UI ✔︎ │
- │ (rdev)  │           │  (image)    │           │(leptess)│         │(llama) │         │(Tauri) │
- └─────────┘           └─────────────┘           └─────────┘         └────────┘         └────────┘
-                                                                                             │
-                                                                                       SQLite▼
-                                                                               ┌──────────────┐
-                                                                               │ scheduler    │
-                                                                               │(SM-2 task)   │
-                                                                               └──────────────┘
-                                                                                             │
-                                                                                       notif▼
-                                                                            mic/keyboard │
-                                                                                             ▼
-                                                                                    Whisper / text
+ ┌─────────┐  hot-key  ┌─────────────┐  image/text ┌────────┐   JSON   ┌────────┐
+ │ OS hook │──────────▶│Capture      │────────────▶│OpenAI  │────────▶│  UI ✔︎ │
+ │ (rdev)  │           │(screenshots)│             │ API    │         │(Tauri) │
+ └─────────┘           └─────────────┘             └────────┘         └────────┘
+                                                                           │
+                                                                     SQLite▼
+                                                                   ┌──────────────┐
+                                                                   │ scheduler    │
+                                                                   │(SM-2 task)   │
+                                                                   └──────────────┘
+                                                                           │
+                                                                    REST API▼
+                                                                 ┌──────────────┐
+                                                                 │ Web UI       │
+                                                                 │(localhost)   │
+                                                                 └──────────────┘
 ```
 
-- **Hot-key listener:** [`rdev`] crate provides cross-platform global shortcuts. ([Docs.rs](https://docs.rs/rdev/?utm_source=chatgpt.com "rdev - Rust"))
+- **Hot-key listener:** [`rdev`] crate provides cross-platform global shortcuts
     
-- **Screen capture:** [`screenshots`] gives zero-copy GPU path on all desktops. ([Crates.io](https://crates.io/crates/screenshots?utm_source=chatgpt.com "screenshots - crates.io: Rust Package Registry"))
+- **Screen capture:** [`screenshots`] gives zero-copy GPU path on all desktops
     
-- **FS watcher (fallback):** [`notify`] crate when users rely on OS screenshot folder. ([Docs.rs](https://docs.rs/notify?utm_source=chatgpt.com "notify - Rust - Docs.rs"))
+- **Text selection:** [`get-selected-text`] for cross-platform text capture
     
+- **Card generation:** OpenAI API with optimized prompts
+    
+- **UI layer:** Tauri desktop app + web interface
+    
+- **API layer:** Warp HTTP server exposing cards endpoint
+    
+- **Scheduler:** SM-2 crate (switchable to FSRS)
+
 - **OCR:** `leptess` (Rust bindings to Tesseract ≥ v4). ([GitHub](https://github.com/houqp/leptess?utm_source=chatgpt.com "houqp/leptess: Productive and safe Rust binding for ... - GitHub"))
     
 - **Local LLM:** `llama.cpp` via FFI, loading Q4_K_M or Q8_0 GGUF. ([Steel Phoenix](https://steelph0enix.github.io/posts/llama-cpp-guide/?utm_source=chatgpt.com "llama.cpp guide - Running LLMs locally, on any hardware, from ..."))
     
-- **UI layer:** Tauri with native notification plugin. ([Tauri](https://v2.tauri.app/plugin/notification/?utm_source=chatgpt.com "Notifications - Tauri"))
-    
 - **Speech-to-text:** `whisper.cpp` compiled with Metal / CUDA optimisations. ([GitHub](https://github.com/ggml-org/whisper.cpp?utm_source=chatgpt.com "ggml-org/whisper.cpp: Port of OpenAI's Whisper model in C/C++"))
-    
-- **Scheduler:** SM-2 crate (switchable to FSRS). ([Docs.rs](https://docs.rs/sm2?utm_source=chatgpt.com "sm2 - Rust - Docs.rs"), [Reddit](https://www.reddit.com/r/Anki/comments/18csuer/fsrs_is_now_the_most_accurate_spaced_repetition/?utm_source=chatgpt.com "FSRS is now the most accurate spaced repetition algorithm ... - Reddit"))
     
 
 ---
@@ -213,7 +220,7 @@ Continuous integration: GitHub Actions → macOS, Windows, Linux matrix.
 
 ### 15.1 Flash-card prompt (system)
 
-> _“You are a strict pedagogue. Given INPUT_TEXT, output JSON with fields {front, back, tags}. The **front** must be phrased as a question. The **back** must be the minimal complete answer. Use no more than 25 words.”_
+> _"You are a strict pedagogue. Given INPUT_TEXT, output JSON with fields {front, back, tags}. The **front** must be phrased as a question. The **back** must be the minimal complete answer. Use no more than 25 words."_
 
 ### 15.2 Card review algorithm (SM-2)
 

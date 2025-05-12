@@ -1,14 +1,16 @@
 # Oakley SRS
 
-Oakley SRS is an **offline, AI-powered spaced-repetition system** that captures knowledge snippets from any screen, turns them into flash-cards with a local LLM, and periodically quizzes the user by voice or text.
+Oakley SRS is an AI-powered spaced-repetition system that captures text or screenshots from your screen, turns them into flash-cards using OpenAI, and periodically quizzes the user by voice or text.
 
 ## Features
 
-- Clipboard capture with one hotkey (⇧⌘P)
-- Automatic flash-card generation through OpenAI (local LLM WIP)
+- Text selection capture (⇧⌘>)
+- Screenshot capture (⇧⌘<)
+- Automatic flash-card generation through OpenAI
 - Spaced repetition scheduling with SM-2 algorithm
 - Voice and text-based review
-- Complete privacy - runs 100% offline
+- Web interface for browsing cards (localhost:5173)
+- REST API for card access (localhost:3030)
 
 ## Development Status
 
@@ -35,7 +37,9 @@ cd tauri-app && npm i                 # pulls front-end deps
 cd tauri-app
 RUST_LOG=debug npm run tauri dev
 
-# press ⇧⌘P to convert clipboard → flash-card
+# Use ⇧⌘> to capture selected text
+# Use ⇧⌘< to capture screenshot
+# Browse cards at http://localhost:5173
 ```
 
 ### Release build
@@ -61,10 +65,10 @@ make build-full # Build with all features
 
 Oakley is built as a Rust workspace with these main components:
 
-- `capture`: Screen capture and region selection
-- `llm`: Local language model for card generation
+- `capture`: Screen capture and text selection
+- `llm`: OpenAI integration for card generation
 - `scheduler`: Spaced repetition algorithm (SM-2)
-- `data`: Database operations
+- `data`: Database operations and REST API
 - `utils`: Shared utilities
 - `oakley-cli`: Command-line interface and orchestration
 
