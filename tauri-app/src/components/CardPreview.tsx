@@ -27,36 +27,43 @@ const CardPreview: React.FC<Props> = ({ card, onClose }) => {
   };
 
   return (
-    <div className="flex flex-col space-y-6 text-gray-800">
-      <div className="space-y-2">
-        <label className="text-sm font-semibold" htmlFor="front">Front</label>
+    <div className="flex flex-col gap-8 text-neutral-800">
+      {/* Front */}
+      <div className="flex flex-col gap-3">
+        <label htmlFor="front" className="text-xs tracking-widest uppercase text-neutral-500">
+          Front
+        </label>
         <textarea
           id="front"
-          className="w-full h-28 border border-gray-300 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-inner bg-white/80 backdrop-blur-sm"
+          className="w-full h-28 bg-transparent border-b border-neutral-300 focus:border-black/80 focus:ring-0 text-lg leading-relaxed placeholder-neutral-400/70"
           value={front}
           onChange={(e) => setFront(e.target.value)}
         />
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-semibold" htmlFor="back">Back</label>
+      {/* Back */}
+      <div className="flex flex-col gap-3">
+        <label htmlFor="back" className="text-xs tracking-widest uppercase text-neutral-500">
+          Back
+        </label>
         <textarea
           id="back"
-          className="w-full h-28 border border-gray-300 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-inner bg-white/80 backdrop-blur-sm"
+          className="w-full h-28 bg-transparent border-b border-neutral-300 focus:border-black/80 focus:ring-0 text-lg leading-relaxed placeholder-neutral-400/70"
           value={back}
           onChange={(e) => setBack(e.target.value)}
         />
       </div>
 
-      <div className="flex gap-3 justify-end pt-2">
+      {/* Actions */}
+      <div className="flex gap-3 justify-end pt-4">
         <button
-          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors"
+          className="px-4 py-2 text-sm font-medium text-neutral-500 hover:text-neutral-800 transition-colors"
           onClick={discard}
         >
           Discard
         </button>
         <button
-          className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-colors"
+          className="px-5 py-2 text-sm font-semibold rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-[.98] transition-transform text-white shadow-sm"
           onClick={save}
         >
           Save

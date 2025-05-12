@@ -50,7 +50,7 @@ export default function App() {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center pointer-events-none bg-white/40 backdrop-blur-sm">
-      <div className="pointer-events-auto bg-white/90 border border-gray-200 rounded-xl shadow-2xl p-8 w-[420px]">
+      <div className="pointer-events-auto bg-white/95 border border-neutral-200 rounded-2xl shadow-xl p-10 w-[460px]">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-40 text-gray-700">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
