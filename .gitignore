@@ -42,3 +42,4 @@ oakley.db
 # Other
 /.cargo/
 .env.local
+package-lock.json
