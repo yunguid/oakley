@@ -4,8 +4,8 @@ Oakley SRS is an **offline, AI-powered spaced-repetition system** that captures 
 
 ## Features
 
-- Screenshot knowledge capture with one hotkey (⇧⌘S)
-- Automatic flashcard generation with local LLM
+- Clipboard capture with one hotkey (⇧⌘P)
+- Automatic flash-card generation through OpenAI (local LLM WIP)
 - Spaced repetition scheduling with SM-2 algorithm
 - Voice and text-based review
 - Complete privacy - runs 100% offline
@@ -16,24 +16,33 @@ This project is currently in early development stage (pre-alpha).
 
 ## Quick Start
 
-### Building from Source
+### Dev loop (Mac/Linux)
 
-Prerequisites:
-- Rust 1.70+
-- Cargo
-
-Clone and build:
+Prereqs
+* Rust ≥ 1.74
+* Node 18 + pnpm / npm
+* OpenAI key in env `OPENAI_API_KEY`
 
 ```bash
 git clone https://github.com/yourusername/oakley-srs.git
 cd oakley-srs
-make build
+
+# first run – install Rust + JS deps
+cargo check -p oakley-tauri           # pulls crates
+cd tauri-app && npm i                 # pulls front-end deps
+
+# dev run (backend + front-end hot-reload, logs in same terminal)
+cd tauri-app
+RUST_LOG=debug npm run tauri dev
+
+# press ⇧⌘P to convert clipboard → flash-card
 ```
 
-Run the application:
+### Release build
 
 ```bash
-make run
+cd tauri-app
+npm run tauri build   # produces .app / .dmg / .msi in target/release/bundle
 ```
 
 ## Development

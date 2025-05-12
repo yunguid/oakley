@@ -28,7 +28,7 @@ export default function App() {
             setLoading(true);
             setVisible(true);
 
-            const text = await navigator.clipboard.readText();
+            const text = await navigator.clipboard.readText(); // assumes user copied text prior to Cmd+Shift+P
             const newCard = await invoke<CardJson>('generate_card', { text });
             setCard(newCard as CardJson);
           } catch (err) {

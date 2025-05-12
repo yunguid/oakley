@@ -57,82 +57,12 @@ async fn generate_card(app: tauri::AppHandle, db: tauri::State<'_, DbPool>, text
     Ok(card_json)
 }
 
-#[cfg(feature = "legacy_capture")]
-fn spawn_background(app: &AppHandle) {
-    let app_handle = app.clone();
-    tauri::async_runtime::spawn(async move {
-        // bootstrap shared state
-        let db: DbPool = match data::new_pool("oakley.db") {
-            Ok(db) => db,
-            Err(e) => {
-                eprintln!("DB init error: {e}");
-                return;
-            }
-        };
-
-        let (cap_tx, mut cap_rx) = mpsc::channel::<CaptureEvent>(16);
-        let (rev_tx, mut _rev_rx) = mpsc::channel::<ReviewOutcome>(32);
-        let scheduler = Scheduler::new(db.clone(), rev_tx.clone());
-
-        // scheduler loop
-        tauri::async_runtime::spawn(scheduler.run());
-
-        // capture listener
-        tauri::async_runtime::spawn(async move {
-            if let Err(e) = capture::listen_and_capture(cap_tx).await {
-                eprintln!("Capture listener error: {e}");
-            }
-        });
-
-        // main bus
-        while let Some(evt) = cap_rx.recv().await {
-            // notify UI card generation started
-            let _ = app_handle.emit_all("card_generating", ());
-
-            // OCR
-            let txt = match extract_text(&evt.image) {
-                Ok(t) => t,
-                Err(e) => {
-                    eprintln!("OCR error: {e}");
-                    continue;
-                }
-            };
-            // LLM
-            let card_fields = match gen_card(&txt).await {
-                Ok(c) => c,
-                Err(e) => {
-                    eprintln!("LLM error: {e}");
-                    continue;
-                }
-            };
-            // convert to CardJson with dummy id for now
-            let mut card_json = CardJson {
-                id: 0,
-                front: card_fields.front.clone(),
-                back: card_fields.back.clone(),
-                tags: card_fields.tags.clone(),
-            };
-
-            let db_card = data::CardJson {
-                id: 0,
-                front: card_fields.front,
-                back: card_fields.back,
-                tags: card_json.tags.clone(),
-            };
-
-            // DB insert
-            match insert_card(&db, &db_card, evt.path.as_deref()) {
-                Ok(id) => {
-                    card_json.id = id;
-                    let _ = app_handle.emit_all("card_created", &card_json);
-                }
-                Err(e) => {
-                    eprintln!("DB insert error: {e}");
-                    let _ = app_handle.emit_all("card_created", &card_json);
-                }
-            }
-        }
-    });
+// legacy background capture (no longer used)
+#[allow(dead_code)]
+fn spawn_background(_app: &tauri::AppHandle) {
+    // ... existing code ...
+    // Register global shortcut Cmd+Shift+P (less likely to conflict)
+    // app.global_shortcut_manager().register("Cmd+Shift+,", move || {
 }
 
 fn main() {
@@ -148,9 +78,9 @@ fn main() {
             let (tx, _rx) = tokio::sync::mpsc::channel::<ReviewOutcome>(32);
             tauri::async_runtime::spawn(Scheduler::new(db.clone(), tx).run());
 
-            // Register global shortcut Cmd+Shift+,
+            // Register global shortcut Cmd+Shift+P (less likely to conflict)
             let handle = app.handle();
-            app.global_shortcut_manager().register("Cmd+Shift+,", move || {
+            app.global_shortcut_manager().register("Cmd+Shift+P", move || {
                 let _ = handle.emit_all("hotkey", ());
             })?;
 
