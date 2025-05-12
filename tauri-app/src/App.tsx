@@ -82,8 +82,9 @@ export default function App() {
         </div>
       )}
 
-      {/* Card list */}
-      <div className="min-h-screen bg-neutral-50/50">
+      {/* Card list – always render so localhost shows it. When in Tauri and overlay
+          hidden we keep window transparent via CSS (opacity-0) to avoid flashing. */}
+      <div className={`min-h-screen bg-neutral-50/50 ${visible ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
         <header className="px-10 py-6 text-xl font-semibold">Oakley Cards</header>
         <CardList cards={cards} />
       </div>
