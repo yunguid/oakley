@@ -62,7 +62,6 @@ make build-full # Build with all features
 Oakley is built as a Rust workspace with these main components:
 
 - `capture`: Screen capture and region selection
-- `ocr`: Optical character recognition
 - `llm`: Local language model for card generation
 - `scheduler`: Spaced repetition algorithm (SM-2)
 - `data`: Database operations

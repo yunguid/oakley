@@ -45,7 +45,7 @@ pub async fn gen_card(text: &str) -> Result<CardFields> {
         info!("Enhanced input with JSON request: '{}'", enhanced_text);
         
         let body = json!({
-            "model": "gpt-4o-mini", // cheaper default; change as desired
+            "model": "gpt-4.1", // cheaper default; change as desired
             "instructions": instructions,
             "input": enhanced_text,
             "temperature": 0.4,

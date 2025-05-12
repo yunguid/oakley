@@ -24,7 +24,7 @@ tracing-subscriber = { workspace = true }
 get-selected-text = "0.1.6"
 # For potential macOS accessibility checks
 macos-accessibility-client = { version = "0.0.1", optional = true }
-warp = { version = "0.3", default-features = false, features = ["json", "cors"] }
+warp = { version = "0.3" }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
