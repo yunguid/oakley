@@ -140,7 +140,20 @@ fn main() {
             app.global_shortcut_manager().register("Cmd+Shift+Comma", move || {
                 let db = db_clone_capture.clone();
                 let async_handle = shortcut_handle.clone();
-                // ... spawn capture task ...
+
+                tauri::async_runtime::spawn(async move {
+                    // Capture the screen (blocking call executed inside async task)
+                    match capture::capture_screen() {
+                        Ok(evt) => {
+                            if let Err(e) = process_capture(evt, &db, &async_handle).await {
+                                error!(?e, "Failed to process captured image");
+                            }
+                        }
+                        Err(e) => {
+                            error!(?e, "Screen capture error");
+                        }
+                    }
+                });
             })?;
 
             // --- Global shortcut for Text Selection (Cmd+Shift+Period) ---
