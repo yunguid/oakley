@@ -112,21 +112,15 @@ fn main() {
 }
 
 async fn process_capture(evt: CaptureEvent, db: &DbPool, app_handle: &tauri::AppHandle) -> Result<()> {
-    // Convert image to PNG bytes for OpenAI vision API.
-    let png_bytes = if let Some(path) = &evt.path {
-        std::fs::read(path)?
-    } else {
-        // Encode in-memory image to PNG
-        let mut buf = Vec::new();
-        image::codecs::png::PngEncoder::new(&mut buf)
-            .encode(
-                &evt.image,
-                evt.image.width(),
-                evt.image.height(),
-                image::ColorType::Rgba8,
-            )?;
-        buf
-    };
+    // Always build PNG from in-memory image to avoid temp-file lifetime issues.
+    let mut png_bytes = Vec::new();
+    image::codecs::png::PngEncoder::new(&mut png_bytes)
+        .encode(
+            &evt.image,
+            evt.image.width(),
+            evt.image.height(),
+            image::ColorType::Rgba8,
+        )?;
 
     info!(size = png_bytes.len(), "📸 Screenshot bytes prepared");
 
