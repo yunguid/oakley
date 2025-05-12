@@ -9,9 +9,12 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 tokio = { workspace = true }
+# For PNG encoding of screenshots
+image = { version = "0.24", default-features = false, features = ["png"] }
 # Oakley internal crates
 capture = { path = "../../crates/capture", features = ["full"] }
-ocr = { path = "../../crates/ocr", features = ["full"] }
+# OCR no longer needed – screenshot image is sent directly to LLM
+# ocr = { path = "../../crates/ocr" }
 llm = { path = "../../crates/llm", features = ["full"] }
 data = { path = "../../crates/data" }
 scheduler = { path = "../../crates/scheduler" }

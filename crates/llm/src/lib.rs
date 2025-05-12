@@ -105,4 +105,77 @@ pub async fn gen_card(text: &str) -> Result<CardFields> {
             tags: vec!["stub".into()],
         })
     }
+}
+
+/// Generate card JSON from a screenshot PNG/JPEG image.
+pub async fn gen_card_from_image(image_bytes: &[u8]) -> Result<CardFields> {
+    #[cfg(feature = "full")]
+    {
+        use base64::{engine::general_purpose, Engine as _};
+        use reqwest::Client;
+        use serde_json::json;
+
+        // Encode bytes as data URL
+        let b64 = general_purpose::STANDARD.encode(image_bytes);
+        let data_url = format!("data:image/png;base64,{}", b64);
+
+        let instructions = "You are an expert pedagogue. For the given image create a concise flashcard JSON with keys front, back, tags (array of strings). Only output valid, structured JSON without any additional text.";
+
+        let body = json!({
+            "model": "gpt-4o-mini",
+            "instructions": instructions,
+            "input": [{
+                "role": "user",
+                "content": [
+                    {"type": "input_image", "image_url": data_url}
+                ]
+            }],
+            "temperature": 0.4,
+            "max_output_tokens": 256,
+            "text": { "format": { "type": "json_object" } }
+        });
+
+        // Get API key
+        let api_key = std::env::var("OPENAI_API_KEY")
+            .map_err(|_| anyhow::anyhow!("Environment variable OPENAI_API_KEY not set"))?;
+
+        info!("Sending vision request ({} bytes image)", image_bytes.len());
+
+        let client = Client::new();
+        let response = client
+            .post("https://api.openai.com/v1/responses")
+            .bearer_auth(api_key)
+            .json(&body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let err = response.text().await?;
+            error!(?status, ?err, "OpenAI vision API error");
+            return Err(anyhow::anyhow!("OpenAI vision API error: {status} {err}"));
+        }
+
+        let resp: serde_json::Value = response.json().await?;
+
+        let content = resp
+            .get("output")
+            .and_then(|o| o.get(0))
+            .and_then(|m| m.get("content"))
+            .and_then(|c| c.get(0))
+            .and_then(|p| p.get("text"))
+            .and_then(|t| t.as_str())
+            .ok_or_else(|| anyhow::anyhow!("Unexpected response structure from OpenAI vision"))?;
+
+        Ok(serde_json::from_str(content)?)
+    }
+
+    #[cfg(not(feature = "full"))]
+    {
+        Ok(CardFields {
+            front: "stub front from image".into(),
+            back: "stub back".into(),
+            tags: vec!["stub".into()],
+        })
+    }
 } 

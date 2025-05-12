@@ -3,9 +3,9 @@
 use anyhow::Result;
 use tracing::info;
 
-// Mock leptess module
-#[cfg(feature = "full")]
-mod leptess {
+// Mock Tesseract when external crate is unavailable
+#[cfg(all(feature = "full", not(feature = "use-crate")))]
+mod leptess_mock {
     pub struct LepTess;
     
     impl LepTess {

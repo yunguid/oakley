@@ -5,11 +5,10 @@ use tauri::{Manager, GlobalShortcutManager};
 use anyhow::Result;
 
 // internal crates
-use llm::gen_card;
+use llm::{gen_card, gen_card_from_image};
 use scheduler::{Scheduler, ReviewOutcome};
 use data::{DbPool, insert_card};
 use capture::CaptureEvent;
-use ocr::extract_text;
 use tracing::{info, error};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
@@ -113,10 +112,25 @@ fn main() {
 }
 
 async fn process_capture(evt: CaptureEvent, db: &DbPool, app_handle: &tauri::AppHandle) -> Result<()> {
-    let text = extract_text(&evt.image)?;
-    info!(len = text.len(), "🔍 OCR extracted");
+    // Convert image to PNG bytes for OpenAI vision API.
+    let png_bytes = if let Some(path) = &evt.path {
+        std::fs::read(path)?
+    } else {
+        // Encode in-memory image to PNG
+        let mut buf = Vec::new();
+        image::codecs::png::PngEncoder::new(&mut buf)
+            .encode(
+                &evt.image,
+                evt.image.width(),
+                evt.image.height(),
+                image::ColorType::Rgba8,
+            )?;
+        buf
+    };
 
-    let fields = gen_card(&text).await?;
+    info!(size = png_bytes.len(), "📸 Screenshot bytes prepared");
+
+    let fields = gen_card_from_image(&png_bytes).await?;
 
     let db_card = data::CardJson {
         id: 0,
