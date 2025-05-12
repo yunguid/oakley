@@ -93,6 +93,9 @@ fn main() {
                 tauri::async_runtime::spawn(async move {
                     match capture::capture_screen() {
                         Ok(evt) => {
+                            // User finished selecting screen area – now notify UI spinner.
+                            let _ = async_handle.emit_all("hotkey", ());
+
                             if let Err(e) = process_capture(evt, &db, &async_handle).await {
                                 error!(?e, "failed to process capture");
                             }
@@ -100,9 +103,6 @@ fn main() {
                         Err(e) => error!(?e, "capture error"),
                     }
                 });
-
-                // Notify UI to show spinner immediately using the original handle.
-                let _ = shortcut_handle.emit_all("hotkey", ());
             })?;
 
             Ok(())
