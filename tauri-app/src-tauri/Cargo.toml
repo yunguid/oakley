@@ -16,6 +16,7 @@ llm = { path = "../../crates/llm", features = ["full"] }
 data = { path = "../../crates/data" }
 scheduler = { path = "../../crates/scheduler" }
 utils = { path = "../../crates/utils" }
+tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [lib]
