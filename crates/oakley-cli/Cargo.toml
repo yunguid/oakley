@@ -13,6 +13,7 @@ notify-rust = "4"
 # local
 utils = { path = "../utils" }
 capture = { path = "../capture" }
+image = { version = "0.24", default-features = false, features = ["png"] }
 llm = { path = "../llm" }
 data = { path = "../data" }
 scheduler = { path = "../scheduler" }

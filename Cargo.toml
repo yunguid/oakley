@@ -36,7 +36,7 @@ rdev = "0.5"
 screenshots = "0.7"
 
 # ML bindings – stubs for now
-llama_cpp = "0.1"
+# llama_cpp = "0.1"
 
 # OCR
 # leptess = "0.6"

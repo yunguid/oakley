@@ -2,8 +2,7 @@
 
 use anyhow::Result;
 use capture::CaptureEvent;
-use ocr::extract_text;
-use llm::gen_card;
+use llm::{gen_card_from_image};
 use scheduler::{Scheduler, ReviewOutcome};
 use tokio::{select, sync::mpsc};
 use tracing::{info, warn};
@@ -30,18 +29,18 @@ async fn main() -> Result<()> {
         select! {
             Some(evt) = cap_rx.recv() => {
                 info!("📸 Capture event received: region={:?}", evt.region);
-                let txt = extract_text(&evt.image)?;
-                info!("🔍 OCR text extracted: '{}' ({} chars)", 
-                      txt.chars().take(50).collect::<String>() + 
-                      if txt.len() > 50 { "..." } else { "" }, 
-                      txt.len());
-                let card = gen_card(&txt).await?;
-                info!("🧠 Generated card: front='{}', back='{}', tags={:?}", 
-                      card.front.chars().take(30).collect::<String>() + 
-                      if card.front.len() > 30 { "..." } else { "" },
-                      card.back.chars().take(30).collect::<String>() + 
-                      if card.back.len() > 30 { "..." } else { "" },
-                      card.tags);
+                // Encode image to PNG bytes for OpenAI
+                let mut png_bytes = Vec::new();
+                image::codecs::png::PngEncoder::new(&mut png_bytes)
+                    .encode(
+                        &evt.image,
+                        evt.image.width(),
+                        evt.image.height(),
+                        image::ColorType::Rgba8,
+                    )?;
+
+                let card = gen_card_from_image(&png_bytes).await?;
+                info!("🧠 Generated card from image");
                 let card_json = data::CardJson { id: 0, front: card.front, back: card.back, tags: card.tags };
                 let new_id = data::insert_card(&db, &card_json, evt.path.as_deref())?;
                 info!("inserted card id={new_id}");

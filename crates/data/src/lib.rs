@@ -82,4 +82,28 @@ pub fn fetch_due_cards(pool: &DbPool, ts: DateTime<Utc>) -> Result<Vec<CardJson>
         out.push(r?);
     }
     Ok(out)
+}
+
+/// Fetch all cards (front/back/tags).
+pub fn fetch_all_cards(pool: &DbPool) -> Result<Vec<CardJson>> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare("SELECT id, front_text, back_text, tags FROM cards ORDER BY id DESC")?;
+    let rows = stmt.query_map([], |row| {
+        let tags: String = row.get(3)?;
+        Ok(CardJson {
+            id: row.get(0)?,
+            front: row.get(1)?,
+            back: row.get(2)?,
+            tags: if tags.is_empty() {
+                Vec::new()
+            } else {
+                tags.split(',').map(|s| s.trim().to_owned()).collect()
+            },
+        })
+    })?;
+    let mut out = Vec::new();
+    for r in rows {
+        out.push(r?);
+    }
+    Ok(out)
 } 

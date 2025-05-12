@@ -7,7 +7,7 @@ use anyhow::Result;
 // internal crates
 use llm::{gen_card, gen_card_from_image};
 use scheduler::{Scheduler, ReviewOutcome};
-use data::{DbPool, insert_card};
+use data::{DbPool, insert_card, fetch_all_cards};
 use capture::CaptureEvent;
 use tracing::{info, error, warn};
 use get_selected_text::get_selected_text;
@@ -110,6 +110,11 @@ async fn create_card_from_selection_impl(app: tauri::AppHandle, db: &DbPool) -> 
     Ok(())
 }
 
+#[tauri::command]
+fn list_cards(db: tauri::State<'_, DbPool>) -> Result<Vec<data::CardJson>, String> {
+    fetch_all_cards(&db).map_err(|e| e.to_string())
+}
+
 // legacy background capture (no longer used)
 #[allow(dead_code)]
 fn spawn_background(_app: &tauri::AppHandle) {
@@ -178,7 +183,8 @@ fn main() {
             generate_card,
             accept_card,
             discard_card,
-            create_card_from_selection // <-- Register new command
+            create_card_from_selection,
+            list_cards
         ])
         .run(tauri::generate_context!())
         .expect("error while running Oakley");
