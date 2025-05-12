@@ -27,13 +27,13 @@ mod imp {
     /// Simple modifier state tracker
     #[derive(Default)]
     struct ModState {
-        ctrl: bool,   // Control
+        meta: bool,   // Command / Meta
         shift: bool,
     }
 
-    /// Listen for hot-key (Ctrl+Shift+>) and push capture events.
+    /// Listen for hot-key (Cmd+Shift+<) and push capture events.
     pub async fn listen_and_capture(tx: Sender<CaptureEvent>) -> Result<()> {
-        info!("🎯 Capture listener enabled, waiting for ⌃⇧>");
+        info!("🎯 Capture listener enabled, waiting for ⌘⇧<");
 
         // Channel to bridge between blocking hotkey thread and async world
         let (evt_tx, mut evt_rx) = tokio::sync::mpsc::channel::<()>(4);
@@ -48,12 +48,12 @@ mod imp {
                     EventType::KeyPress(k) => {
                         info!("👆 Key press: {:?}", k);
                         match k {
-                            Key::ControlLeft | Key::ControlRight => st.ctrl = true,
+                            Key::MetaLeft | Key::MetaRight => st.meta = true,
                             Key::ShiftLeft | Key::ShiftRight => st.shift = true,
-                            Key::Dot => {
-                                // '>' requires Shift modifier; '.' key is Dot
-                                if st.ctrl && st.shift {
-                                    info!("🔑 Hotkey detected: Control+Shift+>");
+                            Key::Comma => {
+                                // '<' requires Shift on comma key
+                                if st.meta && st.shift {
+                                    info!("🔑 Hotkey detected: Command+Shift+<");
                                     let _ = evt_tx.blocking_send(());
                                 }
                             }
@@ -63,7 +63,7 @@ mod imp {
                     EventType::KeyRelease(k) => {
                         info!("👇 Key release: {:?}", k);
                         match k {
-                            Key::ControlLeft | Key::ControlRight => st.ctrl = false,
+                            Key::MetaLeft | Key::MetaRight => st.meta = false,
                             Key::ShiftLeft | Key::ShiftRight => st.shift = false,
                             _ => {}
                         }
