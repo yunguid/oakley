@@ -62,8 +62,6 @@ export default function App() {
     };
   }, []);
 
-  if (!visible) return null;
-
   return (
     <>
       {/* Overlay card modal */}
