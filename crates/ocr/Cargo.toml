@@ -9,8 +9,8 @@ tracing = { workspace = true }
 image = { version = "0.24", default-features = false, features = ["png"] }
 
 # Disable real leptess for now
-# leptess = { workspace = true, optional = true }
+leptess = { workspace = true, optional = true }
 
 [features]
-# We'll re-enable full feature once we can build with real leptess
-full = [] 
+# Full OCR uses Tesseract via the leptess crate
+full = ["leptess"] 

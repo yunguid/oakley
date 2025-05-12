@@ -11,7 +11,7 @@ anyhow = { workspace = true }
 tokio = { workspace = true }
 # Oakley internal crates
 capture = { path = "../../crates/capture", features = ["full"] }
-ocr = { path = "../../crates/ocr" }
+ocr = { path = "../../crates/ocr", features = ["full"] }
 llm = { path = "../../crates/llm", features = ["full"] }
 data = { path = "../../crates/data" }
 scheduler = { path = "../../crates/scheduler" }

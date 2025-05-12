@@ -26,16 +26,19 @@ mod leptess {
 #[cfg(feature = "full")]
 mod imp {
     use super::*;
+    use leptess::LepTess;
     use anyhow::Result;
 
     pub fn extract_text(img: &image::RgbaImage) -> Result<String> {
         info!("OCR: Extracting text from {}x{} image", img.width(), img.height());
-        let mut tess = leptess::LepTess::new(None, "eng")?;
-        info!("OCR: Initialized Tesseract engine");
+
+        // Initialize Tesseract. If TESSDATA_PREFIX is set in env, LepTess will pick it up.
+        let mut tess = LepTess::new(None, "eng")?;
         tess.set_image_from_mem(img.as_raw())?;
         let text = tess.get_utf8_text()?;
-        info!("OCR: Extracted {} characters of text", text.len());
-        Ok(text)
+        let text_trimmed = text.trim().to_string();
+        info!("OCR: Extracted {} characters of text", text_trimmed.len());
+        Ok(text_trimmed)
     }
 }
 
